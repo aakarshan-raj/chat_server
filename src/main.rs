@@ -6,7 +6,7 @@ use tokio::{
 
 #[tokio::main]
 async fn main() {
-    let listner = TcpListener::bind("localhost:8080").await.unwrap();
+    let listner = TcpListener::bind("192.168.1.5:8080").await.unwrap();
     let (tx, rx) = broadcast::channel(10);
     loop {
         let txx = tx.clone();
