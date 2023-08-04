@@ -7,11 +7,11 @@ use tokio::{
 #[tokio::main]
 async fn main() {
     let listner = TcpListener::bind("localhost:8080").await.unwrap();
-    let (tx, rx) = broadcast::channel::<String>(10);
+    let (tx, rx) = broadcast::channel(10);
     loop {
         let txx = tx.clone();
         let mut rxx = txx.subscribe();
-        let (mut socket, _addr) = listner.accept().await.unwrap();
+        let (mut socket, addr) = listner.accept().await.unwrap();
 
         tokio::spawn(async move {
             let (read, mut write) = socket.split();
@@ -21,13 +21,18 @@ async fn main() {
                 let mut lines = String::new();
                 tokio::select!{
                 result = buffer.read_line(&mut lines)=>{
-                txx.send(lines.clone()).unwrap();
+                if result.unwrap() == 2{
+                    break;
+                }    
+                txx.send((lines.clone(),addr)).unwrap();
+                
                 }
                
                 result = rxx.recv() =>{
-                let msg = result.unwrap();    
+                let (msg,addr_check) = result.unwrap();    
+                if addr != addr_check{
                 write.write(&mut msg.as_bytes()).await.unwrap();
-                print!("Message>{}", lines);
+                }
                 }
                 }
             }
